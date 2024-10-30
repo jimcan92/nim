@@ -14,6 +14,11 @@ export class NimGame {
 	nimSum = $derived(this.piles.reduce((acc, pile) => acc ^ pile.items, 0));
 
 	// Derived states for specific configurations
+	many = $derived.by(() => {
+		const remainingPiles = this.piles.filter((p) => p.items > 0);
+		return remainingPiles.length === 1 && remainingPiles[0].items > 1;
+	});
+
 	oneMany = $derived.by(() => {
 		const remainingPiles = this.piles.filter((p) => p.items > 0);
 		return remainingPiles.length === 2 && remainingPiles.some((p) => p.items === 1);
@@ -54,11 +59,14 @@ export class NimGame {
 	}
 
 	computerMove() {
-		const pile = this.getWinningPile();
+		if (this.many || this.oneMany || this.oneOneMany) {
+			const pile = this.piles.find((p) => p.items > 1);
 
-		if (pile) {
-			this.removeAllItemsFromPile(pile);
-			return;
+			if (pile) {
+				this.removeItemsFromPile(pile);
+
+				return;
+			}
 		}
 
 		if (this.nimSum === 0) {
@@ -69,17 +77,11 @@ export class NimGame {
 		this.removeToMakeNimSumZero();
 	}
 
-	private getWinningPile() {
-		if (this.oneMany) return this.piles.find((p) => p.items > 1);
-		if (this.oneOneMany) return this.piles.find((p) => p.items > 1);
-		return null;
-	}
-
-	private removeAllItemsFromPile(pile: Pile) {
+	private removeItemsFromPile(pile: Pile) {
 		const index = this.piles.indexOf(pile);
 		let itemsToRemove = pile.items;
 
-		if (this.oneOneMany) itemsToRemove -= 1;
+		if (this.oneOneMany || this.many) itemsToRemove -= 1;
 
 		this.piles[index].items -= itemsToRemove; // Remove all items from the pile
 		this.computerPicked = `${itemsToRemove} item${pile.items > 1 ? 's' : ''} from pile ${index + 1}`;
