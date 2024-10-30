@@ -1,15 +1,65 @@
 <script lang="ts">
-	import arcaneRune from '$lib/images/arcane.webp';
+	import arcaneRune from '$lib/images/arcane.png';
+	import bountyRune from '$lib/images/bounty.png';
+	import hasteRune from '$lib/images/haste.png';
+	import regenRune from '$lib/images/regen.png';
+
 	import { NimGame } from '$lib/states/g.svelte';
+	import { onMount, type Snippet } from 'svelte';
 	const players = ['Jimboy', 'Computer'];
 
 	const game = new NimGame();
 
-	let piles = $state();
+	let icons = $state([
+		{ name: 'Arcane', icon: arcane },
+		{ name: 'Bounty', icon: bounty },
+		{ name: 'Haste', icon: haste },
+		{ name: 'Regen', icon: regen }
+	]);
+
+	onMount(() => {
+		for (let i = icons.length - 1; i > 0; i--) {
+			const j = Math.floor(Math.random() * (i + 1));
+			[icons[i], icons[j]] = [icons[j], icons[i]]; // Swap elements
+		}
+
+		game.setPileNames(icons.map((i) => i.name));
+	});
 </script>
 
 {#snippet arcane()}
-	<img src={arcaneRune} alt="Arcane" class="rounded-full" />
+	<img src={arcaneRune} alt="Arcane Rune" class="rounded-full" />
+{/snippet}
+
+{#snippet bounty()}
+	<img src={bountyRune} alt="Bounty Rune" class="rounded-full" />
+{/snippet}
+
+{#snippet haste()}
+	<img src={hasteRune} alt="Haste Rune" class="rounded-full" />
+{/snippet}
+
+{#snippet regen()}
+	<img src={regenRune} alt="Regeneration Rune" class="rounded-full" />
+{/snippet}
+
+{#snippet item({
+	selected,
+	select,
+	icon
+}: {
+	selected: boolean;
+	select: VoidFunction;
+	icon: Snippet;
+})}
+	<button class="rune cursor-pointer" class:selected onclick={select}>
+		<!-- Add some visuals like matchstick or customize it -->
+		<!-- <svg width="40" height="100">
+									<rect width="10" height="70" x="15" y="20" fill="brown" />
+									<circle cx="20" cy="20" r="10" fill="red" />
+								</svg> -->
+		{@render icon()}
+	</button>
 {/snippet}
 
 <h2 class="text-center text-3xl font-bold">Nim Game</h2>
@@ -21,25 +71,18 @@
 	</div>
 {:else}
 	<!-- <p class="text-center text-xl">Turn: {players[game.picking]}</p> -->
-	<p class="text-center text-xl">Computer Picked: {game.computerPicked}</p>
+	<p class="text-center text-xl">{game.computerPicked}</p>
 	<div class="grid">
 		{#each game.piles as pile, pileIndex}
 			<div class="card w-52 bg-base-100 shadow-md p-4">
 				<!-- <h3 class="font-bold text-xl">Pile {pileIndex + 1}</h3> -->
 				<div class="grid grid-cols-3">
 					{#each Array(pile.items).fill(0) as _, itemIndex}
-						<button
-							class="matchstick cursor-pointer"
-							class:selected={pile.selected[itemIndex]}
-							onclick={() => game.toggleSelect(pileIndex, itemIndex)}
-						>
-							<!-- Add some visuals like matchstick or customize it -->
-							<!-- <svg width="40" height="100">
-								<rect width="10" height="70" x="15" y="20" fill="brown" />
-								<circle cx="20" cy="20" r="10" fill="red" />
-							</svg> -->
-							{@render arcane()}
-						</button>
+						{@render item({
+							selected: pile.selected[itemIndex],
+							select: () => game.toggleSelect(pileIndex, itemIndex),
+							icon: icons[pileIndex].icon
+						})}
 					{/each}
 				</div>
 			</div>
@@ -53,7 +96,7 @@
 {/if}
 
 <style>
-	.matchstick {
+	.rune {
 		max-width: 3rem;
 		max-height: 3rem;
 
@@ -61,7 +104,7 @@
 		transition: transform 0.2s;
 		opacity: 0.5;
 	}
-	.matchstick.selected {
+	.rune.selected {
 		transform: scale(1); /* Highlight effect on selected matchsticks */
 		opacity: 1;
 	}

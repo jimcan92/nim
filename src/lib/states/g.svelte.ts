@@ -1,10 +1,11 @@
 type Pile = {
 	items: number;
 	selected: boolean[];
+	name: string;
 };
 
 export class NimGame {
-	piles = $state<Pile[]>([{ items: 1, selected: [false] }]);
+	piles = $state<Pile[]>([{ items: 1, selected: [false], name: '' }]);
 	activePile = $derived(this.piles.findIndex((p) => p.selected.find((s) => s)));
 	picking = $state(0);
 	over = $derived(this.piles.reduce((s, i) => s + i.items, 0) === 0);
@@ -37,8 +38,15 @@ export class NimGame {
 	constructor(numberOfPiles: number = 4) {
 		this.piles = Array.from({ length: numberOfPiles }, (_, index) => 2 * index + 1).map((v) => ({
 			items: v,
-			selected: Array(v).fill(false)
+			selected: Array(v).fill(false),
+			name: ''
 		}));
+	}
+
+	setPileNames(names: string[]) {
+		names.forEach((n, i) => {
+			this.piles[i].name = n;
+		});
 	}
 
 	isItemSelected(pileIndex: number, itemIndex: number) {
@@ -89,7 +97,7 @@ export class NimGame {
 		if (this.oneOneMany || this.many) itemsToRemove -= 1;
 
 		this.piles[index].items -= itemsToRemove; // Remove all items from the pile
-		this.computerPicked = `${itemsToRemove} item${pile.items > 1 ? 's' : ''} from pile ${index + 1}`;
+		this.computerPicked = `Computer picked ${itemsToRemove} ${pile.name} ${itemsToRemove > 1 ? 'Runes' : 'Rune'}`;
 		this.picking = 0; // End of computer's turn
 	}
 
@@ -99,7 +107,7 @@ export class NimGame {
 			.filter((index) => index !== -1);
 		const randomIndex = nonEmptyPiles[Math.floor(Math.random() * nonEmptyPiles.length)];
 		this.piles[randomIndex].items -= 1;
-		this.computerPicked = `1 item in pile ${randomIndex + 1}`;
+		this.computerPicked = `Computer picked 1 ${this.piles[randomIndex].name} Rune`;
 		this.picking = 0;
 	}
 
@@ -107,9 +115,9 @@ export class NimGame {
 		for (let i = 0; i < this.piles.length; i++) {
 			const targetPile = this.piles[i].items ^ this.nimSum;
 			if (targetPile < this.piles[i].items) {
-				const stonesToRemove = this.piles[i].items - targetPile;
-				this.piles[i].items -= stonesToRemove;
-				this.computerPicked = `${stonesToRemove} item${stonesToRemove > 1 ? 's' : ''} in pile ${i + 1}`;
+				const itemsToRemove = this.piles[i].items - targetPile;
+				this.piles[i].items -= itemsToRemove;
+				this.computerPicked = `Computer picked ${itemsToRemove} ${this.piles[i].name} ${itemsToRemove > 1 ? 'Runes' : 'Rune'}`;
 				this.picking = 0; // End of computer's turn
 				return;
 			}
