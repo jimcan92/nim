@@ -31,7 +31,7 @@ export class NimGame {
 
 	oneOneOneMany = $derived.by(() => {
 		const remainingPiles = this.piles.filter((p) => p.items > 0);
-		return remainingPiles.length === 4 && remainingPiles.filter((p) => p.items === 1).length === 1;
+		return remainingPiles.length === 4 && remainingPiles.filter((p) => p.items === 1).length === 3;
 	});
 
 	constructor(numberOfPiles: number = 4) {
