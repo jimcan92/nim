@@ -1,10 +1,16 @@
 <script lang="ts">
-	import haste from '$lib/images/arcane.webp';
+	import arcaneRune from '$lib/images/arcane.webp';
 	import { NimGame } from '$lib/states/g.svelte';
 	const players = ['Jimboy', 'Computer'];
 
 	const game = new NimGame();
+
+	let piles = $state();
 </script>
+
+{#snippet arcane()}
+	<img src={arcaneRune} alt="Arcane" class="rounded-full" />
+{/snippet}
 
 <h2 class="text-center text-3xl font-bold">Nim Game</h2>
 
@@ -32,7 +38,7 @@
 								<rect width="10" height="70" x="15" y="20" fill="brown" />
 								<circle cx="20" cy="20" r="10" fill="red" />
 							</svg> -->
-							<img src={haste} alt="" class="rounded-full" />
+							{@render arcane()}
 						</button>
 					{/each}
 				</div>

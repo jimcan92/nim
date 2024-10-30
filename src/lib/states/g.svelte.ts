@@ -29,6 +29,11 @@ export class NimGame {
 		return remainingPiles.length === 3 && remainingPiles.filter((p) => p.items === 1).length === 2;
 	});
 
+	oneOneOneMany = $derived.by(() => {
+		const remainingPiles = this.piles.filter((p) => p.items > 0);
+		return remainingPiles.length === 4 && remainingPiles.filter((p) => p.items === 1).length === 1;
+	});
+
 	constructor(numberOfPiles: number = 4) {
 		this.piles = Array.from({ length: numberOfPiles }, (_, index) => 2 * index + 1).map((v) => ({
 			items: v,
@@ -59,7 +64,7 @@ export class NimGame {
 	}
 
 	computerMove() {
-		if (this.many || this.oneMany || this.oneOneMany) {
+		if (this.many || this.oneMany || this.oneOneMany || this.oneOneOneMany) {
 			const pile = this.piles.find((p) => p.items > 1);
 
 			if (pile) {
