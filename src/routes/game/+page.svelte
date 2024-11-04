@@ -1,15 +1,14 @@
 <script lang="ts">
+	import { page } from '$app/stores';
 	import arcaneRune from '$lib/images/arcane.png';
 	import bountyRune from '$lib/images/bounty.png';
 	import hasteRune from '$lib/images/haste.png';
 	import regenRune from '$lib/images/regen.png';
-	import { game } from '$lib/states/game.svelte';
+	import { NimGame } from '$lib/states/game.svelte';
 
 	import { onMount, type Snippet } from 'svelte';
 
-	// let { players }: { players: string[] } = $props();
-
-	// const game = new NimGame({ players });
+	const game = new NimGame();
 
 	let icons = $state([
 		{ name: 'Arcane', icon: arcane },
@@ -19,11 +18,20 @@
 	]);
 
 	onMount(() => {
+		const p1 = $page.url.searchParams.get('p1');
+		const p2 = $page.url.searchParams.get('p2');
+
+		let players = ['Player 1'];
+
+		if (p1) players[0] = p1;
+		if (p2) players[1] = p2;
+
 		for (let i = icons.length - 1; i > 0; i--) {
 			const j = Math.floor(Math.random() * (i + 1));
 			[icons[i], icons[j]] = [icons[j], icons[i]]; // Swap elements
 		}
 
+		game.setPlayers(players);
 		game.setPileNames(icons.map((i) => i.name));
 	});
 </script>
@@ -60,7 +68,7 @@
 
 <h2 class="text-center text-3xl font-bold">Nim Game</h2>
 
-{#if game.gameOver}
+{#if game.over}
 	<p class="text-center text-2xl">{game.players[game.picking]} has won!</p>
 	<div class="flex justify-center">
 		<button class="btn btn-primary" onclick={() => window.location.reload()}>Restart Game</button>
@@ -68,10 +76,10 @@
 {:else}
 	<p class="text-center text-xl">Picker: {game.players[game.picking]}</p>
 	<p class="text-center text-xl">{game.computerPicked}</p>
-	<div class="grid">
+	<div class="grid sm:grid-cols-2 lg:grid-cols-4">
 		{#each game.piles as pile, pileIndex}
-			<div class="card w-52 bg-base-100 shadow-md p-4">
-				<div class="grid grid-cols-3">
+			<div class="card bg-base-100 shadow-md p-4">
+				<div class="flex flex-wrap">
 					{#each Array(pile.items).fill(0) as _, itemIndex}
 						{@render item({
 							selected: pile.selected[itemIndex],
@@ -80,6 +88,7 @@
 						})}
 					{/each}
 				</div>
+				<p>{pile.name}</p>
 			</div>
 		{/each}
 		<button

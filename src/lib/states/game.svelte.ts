@@ -4,151 +4,129 @@ type Pile = {
 	name: string;
 };
 
-let _piles = $state<Pile[]>([{ items: 1, selected: [false], name: '' }]);
-let _picking = $state(0);
-let _computerPicked = $state('');
-let _twoPlayer = $state(false);
-let _players = $state(['Player']);
+export class NimGame {
+	piles = $state<Pile[]>([{ items: 1, selected: [false], name: '' }]);
+	activePile = $derived(this.piles.findIndex((p) => p.selected.find((s) => s)));
+	picking = $state(0);
+	over = $derived(this.piles.reduce((s, i) => s + i.items, 0) === 0);
+	computerPicked = $state('');
+	twoPlayer = $state(false);
+	players = $state(['Player 1']);
 
-const _nimSum = $derived(_piles.reduce((acc, pile) => acc ^ pile.items, 0));
-const _activePile = $derived(_piles.findIndex((p) => p.selected.find((s) => s)));
-const _gameOver = $derived(_piles.reduce((s, i) => s + i.items, 0) === 0);
+	nimSum = $derived(this.piles.reduce((acc, pile) => acc ^ pile.items, 0));
 
-const _many = $derived.by(() => {
-	const remainingPiles = _piles.filter((p) => p.items > 0);
-	return remainingPiles.length === 1 && remainingPiles[0].items > 1;
-});
-
-const _oneMany = $derived.by(() => {
-	const remainingPiles = _piles.filter((p) => p.items > 0);
-	return remainingPiles.length === 2 && remainingPiles.some((p) => p.items === 1);
-});
-
-const _oneOneMany = $derived.by(() => {
-	const remainingPiles = _piles.filter((p) => p.items > 0);
-	return remainingPiles.length === 3 && remainingPiles.filter((p) => p.items === 1).length === 2;
-});
-
-const _oneOneOneMany = $derived.by(() => {
-	const remainingPiles = _piles.filter((p) => p.items > 0);
-	return remainingPiles.length === 4 && remainingPiles.filter((p) => p.items === 1).length === 3;
-});
-
-export const game = {
-	get computerPicked() {
-		return _computerPicked;
-	},
-	get players() {
-		return _players;
-	},
-	get gameOver() {
-		return _gameOver;
-	},
-	get picking() {
-		return _picking;
-	},
-	get piles() {
-		return _piles;
-	},
-	get activePile() {
-		return _activePile;
-	},
-	create,
-	setPileNames,
-	toggleSelect,
-	confirmPick
-};
-
-function create({
-	numberOfPiles = 4,
-	players = ['Player 1']
-}: { numberOfPiles?: number; players?: string[] } = {}) {
-	_piles = Array.from({ length: numberOfPiles }, (_, index) => 2 * index + 1).map((v) => ({
-		items: v,
-		selected: Array(v).fill(false),
-		name: ''
-	}));
-	_twoPlayer = players.length === 2;
-	_players = players.length === 2 ? players : [players[0], 'Computer'];
-}
-
-function setPileNames(names: string[]) {
-	names.forEach((n, i) => {
-		_piles[i].name = n;
+	many = $derived.by(() => {
+		const remainingPiles = this.piles.filter((p) => p.items > 0);
+		return remainingPiles.length === 1 && remainingPiles[0].items > 1;
 	});
-}
 
-function isItemSelected(pileIndex: number, itemIndex: number) {
-	return _piles[pileIndex].selected[itemIndex];
-}
+	oneMany = $derived.by(() => {
+		const remainingPiles = this.piles.filter((p) => p.items > 0);
+		return remainingPiles.length === 2 && remainingPiles.some((p) => p.items === 1);
+	});
 
-function toggleSelect(pileIndex: number, itemIndex: number) {
-	if (_activePile >= 0 && _activePile !== pileIndex) return;
+	oneOneMany = $derived.by(() => {
+		const remainingPiles = this.piles.filter((p) => p.items > 0);
+		return remainingPiles.length === 3 && remainingPiles.filter((p) => p.items === 1).length === 2;
+	});
 
-	_piles[pileIndex].selected[itemIndex] = !isItemSelected(pileIndex, itemIndex);
-}
+	oneOneOneMany = $derived.by(() => {
+		const remainingPiles = this.piles.filter((p) => p.items > 0);
+		return remainingPiles.length === 4 && remainingPiles.filter((p) => p.items === 1).length === 3;
+	});
 
-function deselectAll(pileIndex: number) {
-	_piles[pileIndex].selected.fill(false);
-}
+	constructor({ numberOfPiles = 4 }: { numberOfPiles?: number } = {}) {
+		this.piles = Array.from({ length: numberOfPiles }, (_, index) => 2 * index + 1).map((v) => ({
+			items: v,
+			selected: Array(v).fill(false),
+			name: ''
+		}));
+	}
 
-function confirmPick() {
-	const selectedCount = _piles[_activePile!].selected.filter((v) => v).length;
-	_piles[_activePile!].items -= selectedCount;
-	deselectAll(_activePile!);
-	_picking = _picking === 0 ? 1 : 0;
-	if (!_twoPlayer) computerMove();
-}
+	setPileNames(names: string[]) {
+		names.forEach((n, i) => {
+			this.piles[i].name = n;
+		});
+	}
 
-function computerMove() {
-	if (_many || _oneMany || _oneOneMany || _oneOneOneMany) {
-		const pile = _piles.find((p) => p.items > 1);
+	setPlayers(players: string[]) {
+		this.players = players;
+		this.twoPlayer = this.players.length === 2;
+		this.players = this.players.length === 2 ? this.players : [this.players[0], 'Computer'];
+	}
 
-		if (pile) {
-			removeItemsFromPile(pile);
+	isItemSelected(pileIndex: number, itemIndex: number) {
+		return this.piles[pileIndex].selected[itemIndex];
+	}
 
+	toggleSelect(pileIndex: number, itemIndex: number) {
+		if (this.activePile >= 0 && this.activePile !== pileIndex) return;
+
+		this.piles[pileIndex].selected[itemIndex] = !this.isItemSelected(pileIndex, itemIndex);
+	}
+
+	deselectAll(pileIndex: number) {
+		this.piles[pileIndex].selected.fill(false);
+	}
+
+	confirmPick() {
+		const selectedCount = this.piles[this.activePile!].selected.filter((v) => v).length;
+		this.piles[this.activePile!].items -= selectedCount;
+		this.deselectAll(this.activePile!);
+		this.picking = this.picking === 0 ? 1 : 0;
+		if (!this.twoPlayer) this.computerMove();
+	}
+
+	computerMove() {
+		if (this.many || this.oneMany || this.oneOneMany || this.oneOneOneMany) {
+			const pile = this.piles.find((p) => p.items > 1);
+
+			if (pile) {
+				this.removeItemsFromPile(pile);
+
+				return;
+			}
+		}
+
+		if (this.nimSum === 0) {
+			this.randomRemove();
 			return;
 		}
+
+		this.removeToMakeNimSumZero();
 	}
 
-	if (_nimSum === 0) {
-		randomRemove();
-		return;
+	private removeItemsFromPile(pile: Pile) {
+		const index = this.piles.indexOf(pile);
+		let itemsToRemove = pile.items;
+
+		if (this.oneOneMany || this.many) itemsToRemove -= 1;
+
+		this.piles[index].items -= itemsToRemove; // Remove all items from the pile
+		this.computerPicked = `Computer picked ${itemsToRemove} ${pile.name} ${itemsToRemove > 1 ? 'Runes' : 'Rune'}`;
+		this.picking = 0; // End of computer's turn
 	}
 
-	removeToMakeNimSumZero();
-}
+	private randomRemove() {
+		const nonEmptyPiles = this.piles
+			.map((pile, index) => (pile.items > 0 ? index : -1))
+			.filter((index) => index !== -1);
+		const randomIndex = nonEmptyPiles[Math.floor(Math.random() * nonEmptyPiles.length)];
+		this.piles[randomIndex].items -= 1;
+		this.computerPicked = `Computer picked 1 ${this.piles[randomIndex].name} Rune`;
+		this.picking = 0;
+	}
 
-function removeItemsFromPile(pile: Pile) {
-	const index = _piles.indexOf(pile);
-	let itemsToRemove = pile.items;
-
-	if (_oneOneMany || _many) itemsToRemove -= 1;
-
-	_piles[index].items -= itemsToRemove; // Remove all items from the pile
-	_computerPicked = `Computer picked ${itemsToRemove} ${pile.name} ${itemsToRemove > 1 ? 'Runes' : 'Rune'}`;
-	_picking = 0; // End of computer's turn
-}
-
-function randomRemove() {
-	const nonEmptyPiles = _piles
-		.map((pile, index) => (pile.items > 0 ? index : -1))
-		.filter((index) => index !== -1);
-	const randomIndex = nonEmptyPiles[Math.floor(Math.random() * nonEmptyPiles.length)];
-	_piles[randomIndex].items -= 1;
-	_computerPicked = `Computer picked 1 ${_piles[randomIndex].name} Rune`;
-	_picking = 0;
-}
-
-function removeToMakeNimSumZero() {
-	for (let i = 0; i < _piles.length; i++) {
-		const targetPile = _piles[i].items ^ _nimSum;
-		if (targetPile < _piles[i].items) {
-			const itemsToRemove = _piles[i].items - targetPile;
-			_piles[i].items -= itemsToRemove;
-			_computerPicked = `Computer picked ${itemsToRemove} ${_piles[i].name} ${itemsToRemove > 1 ? 'Runes' : 'Rune'}`;
-			_picking = 0; // End of computer's turn
-			return;
+	private removeToMakeNimSumZero() {
+		for (let i = 0; i < this.piles.length; i++) {
+			const targetPile = this.piles[i].items ^ this.nimSum;
+			if (targetPile < this.piles[i].items) {
+				const itemsToRemove = this.piles[i].items - targetPile;
+				this.piles[i].items -= itemsToRemove;
+				this.computerPicked = `Computer picked ${itemsToRemove} ${this.piles[i].name} ${itemsToRemove > 1 ? 'Runes' : 'Rune'}`;
+				this.picking = 0; // End of computer's turn
+				return;
+			}
 		}
 	}
 }
