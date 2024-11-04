@@ -10,11 +10,11 @@ export class NimGame {
 	picking = $state(0);
 	over = $derived(this.piles.reduce((s, i) => s + i.items, 0) === 0);
 	computerPicked = $state('');
+	twoPlayer: boolean;
+	players: string[];
 
-	// Calculate nim sum of all piles
 	nimSum = $derived(this.piles.reduce((acc, pile) => acc ^ pile.items, 0));
 
-	// Derived states for specific configurations
 	many = $derived.by(() => {
 		const remainingPiles = this.piles.filter((p) => p.items > 0);
 		return remainingPiles.length === 1 && remainingPiles[0].items > 1;
@@ -35,12 +35,17 @@ export class NimGame {
 		return remainingPiles.length === 4 && remainingPiles.filter((p) => p.items === 1).length === 3;
 	});
 
-	constructor(numberOfPiles: number = 4) {
+	constructor({
+		numberOfPiles = 4,
+		players = ['Player 1']
+	}: { numberOfPiles?: number; players?: string[] } = {}) {
 		this.piles = Array.from({ length: numberOfPiles }, (_, index) => 2 * index + 1).map((v) => ({
 			items: v,
 			selected: Array(v).fill(false),
 			name: ''
 		}));
+		this.twoPlayer = players.length === 2;
+		this.players = players.length === 2 ? players : [players[0], 'Computer'];
 	}
 
 	setPileNames(names: string[]) {
@@ -68,7 +73,7 @@ export class NimGame {
 		this.piles[this.activePile!].items -= selectedCount;
 		this.deselectAll(this.activePile!);
 		this.picking = this.picking === 0 ? 1 : 0;
-		this.computerMove();
+		if (!this.twoPlayer) this.computerMove();
 	}
 
 	computerMove() {

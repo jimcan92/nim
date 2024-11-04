@@ -1,8 +1,10 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { game } from '$lib/states/game.svelte';
 
 	const startGame = () => {
-		goto('/gb');
+		game.create({ players: ['jimcan', 'cj'] });
+		goto('/game');
 	};
 </script>
 
